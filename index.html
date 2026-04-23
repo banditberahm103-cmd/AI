@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ULTRA AD SYSTEM | ВХОД</title>
+    <style>
+        :root { --neon: #00ffcc; --pink: #ff0055; --bg: #000; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial Black', sans-serif; }
+        
+        body { background: var(--bg); color: white; height: 100vh; overflow: hidden; }
+
+        /* ЭКРАН ВХОДА */
+        #login-screen {
+            position: fixed; inset: 0; background: #000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; transition: 0.5s;
+        }
+        #login-screen h1 { 
+            font-size: 3.5rem; color: var(--neon); text-shadow: 0 0 20px var(--neon); 
+            margin-bottom: 30px; letter-spacing: 5px;
+        }
+        .login-btn {
+            padding: 15px 50px; background: none; border: 3px solid var(--neon);
+            color: var(--neon); font-size: 1.8rem; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 0 15px var(--neon); text-transform: uppercase;
+        }
+        .login-btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 40px var(--neon); }
+
+        /* ИНТЕРФЕЙС ГЕНЕРАТОРА */
+        #main-ui { display: none; height: 100vh; flex-direction: column; }
+
+        .canvas-container {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 10px; background: radial-gradient(circle, #0a0a0a, #000);
+        }
+
+        #adCanvas {
+            max-height: 85vh; max-width: 95vw; border: 2px solid #fff;
+            box-shadow: 0 0 80px rgba(0, 255, 204, 0.2);
+        }
+
+        /* ПАНЕЛЬ УПРАВЛЕНИЯ */
+        .ui-panel {
+            width: 100%; background: #080808; padding: 15px 30px;
+            border-top: 2px solid var(--neon); display: flex; gap: 20px;
+            align-items: center; justify-content: center;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 3px; }
+        .input-group label { font-size: 9px; color: var(--neon); text-transform: uppercase; }
+
+        input { background: #111; color: #fff; border: 1px solid #333; padding: 10px; outline: none; }
+        
+        .action-btn {
+            padding: 12px 20px; background: var(--neon); color: #000;
+            border: none; font-weight: 900; cursor: pointer; text-transform: uppercase;
+        }
+
+        #downloadBtn { background: var(--pink); color: #fff; }
+        
+        #exitBtn { 
+            background: none; border: 1px solid #ff0055; color: #ff0055; 
+            margin-left: 20px; transition: 0.3s;
+        }
+        #exitBtn:hover { background: #ff0055; color: #fff; }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <h1>ULTRA GENERATOR</h1>
+    <button class="login-btn" id="enterBtn" onclick="enterSystem()">ВОЙТИ</button>
+</div>
+
+<div id="main-ui">
+    <div class="canvas-container">
+        <canvas id="adCanvas" width="1200" height="1600"></canvas>
+    </div>
+
+    <div class="ui-panel">
+        <div class="input-group">
+            <label>Загрузить фото</label>
+            <input type="file" id="imageLoader" accept="image/*">
+        </div>
+        <div class="input-group">
+            <label>Верхний текст</label>
+            <input type="text" id="topText" placeholder="ТЕКСТ 1" maxlength="20">
+        </div>
+        <div class="input-group">
+            <label>Нижний текст</label>
+            <input type="text" id="bottomText" placeholder="ТЕКСТ 2" maxlength="15">
+        </div>
+        
+        <button class="action-btn" onclick="renderAd()">ГЕНЕРИРОВАТЬ</button>
+        <button class="action-btn" id="downloadBtn" onclick="downloadAd()">СКАЧАТЬ</button>
+        <button class="action-btn" id="exitBtn" onclick="exitSystem()">ВЫЙТИ</button>
+    </div>
+</div>
+
+<script>
+    const loginScreen = document.getElementById('login-screen');
+    const mainUI = document.getElementById('main-ui');
+    const enterBtn = document.getElementById('enterBtn');
+    const canvas = document.getElementById('adCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let userImg = null;
+    let styleIndex = 0;
+
+    function enterSystem() {
+        enterBtn.innerText = "ЗАГРУЗКА...";
+        setTimeout(() => {
+            loginScreen.style.opacity = '0';
+            setTimeout(() => {
+                loginScreen.style.display = 'none';
+                mainUI.style.display = 'flex';
+                renderAd();
+            }, 500);
+        }, 800);
+    }
+
+    function exitSystem() {
+        mainUI.style.display = 'none';
+        loginScreen.style.display = 'flex';
+        loginScreen.style.opacity = '1';
+        enterBtn.innerText = "ВОЙТИ";
+    }
+
+    document.getElementById('imageLoader').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            userImg = new Image();
+            userImg.onload = renderAd;
+            userImg.src = ev.target.result;
+        }
+        reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function renderAd() {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 1200, 1600);
+
+        if (userImg) {
+            let r = Math.max(1200 / userImg.width, 1600 / userImg.height);
+            ctx.filter = "contrast(1.4) brightness(0.7) saturate(1.5)";
+            ctx.drawImage(userImg, (1200-userImg.width*r)/2, (1600-userImg.height*r)/2, userImg.width*r, userImg.height*r);
+            ctx.filter = "none";
+        }
+
+        ctx.globalCompositeOperation = "lighter";
+        styleIndex = (styleIndex + 1) % 3;
+        
+        if(styleIndex == 0) {
+            ctx.strokeStyle = "#00ffcc"; ctx.lineWidth = 40; ctx.shadowBlur = 60; ctx.shadowColor = "#00ffcc";
+            ctx.strokeRect(20, 20, 1160, 1560);
+        } else if(styleIndex == 1) {
+            ctx.fillStyle = "#ff0055"; ctx.shadowBlur = 100; ctx.shadowColor = "#ff0055";
+            ctx.beginPath(); ctx.arc(0, 0, 600, 0, 7); ctx.fill();
+            ctx.beginPath(); ctx.arc(1200, 1600, 600, 0, 7); ctx.fill();
+        } else {
+            for(let i=0; i<60; i++) {
+                ctx.fillStyle = i%2==0 ? "#00ffcc" : "#ff0055";
+                ctx.fillRect(Math.random()*1200, Math.random()*1600, 8, 8);
+            }
+        }
+
+        ctx.globalCompositeOperation = "source-over";
+        const t1 = document.getElementById('topText').value.toUpperCase() || "ULTRA AD";
+        const t2 = document.getElementById('bottomText').value.toUpperCase() || "КУПИТЬ";
+
+        ctx.textAlign = "center";
+        ctx.font = "900 130px 'Arial Black'";
+        ctx.fillStyle = "#fff"; ctx.shadowBlur = 40; ctx.shadowColor = "#00ffcc";
+        ctx.fillText(t1, 600, 300);
+
+        ctx.fillStyle = "#ff0055"; ctx.shadowBlur = 50; ctx.shadowColor = "#ff0055";
+        ctx.fillRect(250, 1380, 700, 160);
+        ctx.fillStyle = "#fff"; ctx.shadowBlur = 0; ctx.font = "900 90px 'Arial Black'";
+        ctx.fillText(t2, 600, 1495);
+    }
+
+    function downloadAd() {
+        const link = document.createElement('a');
+        link.download = 'ULTRA_AD.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+</script>
+</body>
+</html>
